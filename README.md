@@ -66,7 +66,3 @@ Now you can fix the issue in the CFN template and deploy again. :ship:
 Also note that my setup is configured for python, but you can easily change it to your language of choice easily - [change](http://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref.html) the `Image` used for the build part, change the handler and runtime in `lambda.yml` and modify `buildspec.yml` to your needs.
 
 You'll probably want to change some other values in the CFN templates as well, just so your Lambda function is not named `my-lambda-function` but something more appropriate for your project :grin:
-
-##### What to change:
- * `PIPELINE_STACK_NAME` parameter in bootstrap.sh - I recommend keeping the same base as `ProjectName` and adding a `-pipeline` suffix
- * Parameters in both CFN templates

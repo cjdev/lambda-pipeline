@@ -1,9 +1,21 @@
-version: 0.1
+version: 0.2
 
 phases:
   install:
     commands:
-      - pip install -r requirements.txt -t app
+      - echo Installing Mocha...
+      - npm install -g mocha
+  pre_build:
+    commands:
+      - echo Installing source NPM dependencies...
+      - npm install --production
+  build:
+    commands:
+      - echo Running tests...
+      - npm test
+  post_build:
+    commands:
+      - echo Build completed on `date`
 
 artifacts:
   base-directory: app

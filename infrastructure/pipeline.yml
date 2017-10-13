@@ -4,16 +4,15 @@ Description: CD pipeline for my Lambda project
 Parameters:
   ProjectName:
     Type: String
-    Default: my-lambda-project
-  CapitalizedProjectName:
+  SourceRepo:
     Type: String
-    Default: MyLambdaProject
-  SourceRepositoryName:
+  SourceBranch:
     Type: String
-    Default: lambda-pipeline
-  SourceBranchName:
+  GitHubOAuthToken:
     Type: String
-    Default: master
+    Description: OAuth token allowing CodePipeline access to source repo
+    MinLength: 1
+    NoEcho: true
 
 Resources:
   ArtifactsBucket:
@@ -47,11 +46,6 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: '*'
-              - Sid: CodeCommitPullPolicy
-                Effect: Allow
-                Action:
-                  - codecommit:GitPull
                 Resource: '*'
               - Sid: S3GetObjectPolicy
                 Effect: Allow
@@ -96,11 +90,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-  CodeCommitRepository:
-    Type: AWS::CodeCommit::Repository
-    Properties:
-      RepositoryName: !Ref SourceRepositoryName
-
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     DependsOn: CloudFormationRole
@@ -109,7 +98,7 @@ Resources:
         Type: CODEPIPELINE
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/python:2.7.12
+        Image: aws/codebuild/nodejs:6.3.1
         Type: LINUX_CONTAINER
       Name: !Sub '${ProjectName}'
       ServiceRole: !GetAtt CodeBuildRole.Arn
@@ -132,14 +121,17 @@ Resources:
             - Name: Source
               ActionTypeId:
                 Category: Source
-                Owner: AWS
-                Provider: CodeCommit
+                Owner: ThirdParty
+                Provider: GitHub
                 Version: 1
-              Configuration:
-                RepositoryName: !Ref SourceRepositoryName
-                BranchName: !Ref SourceBranchName
               OutputArtifacts:
                 - Name: SourceOutput
+              Configuration:
+                Owner: cjdev
+                Repo: !Ref SourceRepo
+                PollForSourceChanges: true
+                Branch: !Ref SourceBranch
+                OAuthToken: !Ref GitHubOAuthToken
         - Name: PipelineDeploy
           Actions:
             - Name: CreateUpdatePipeline
@@ -195,8 +187,4 @@ Outputs:
     Description: S3 bucket holding all the OutputArtifacts of any pipeline stage
     Value: !Ref ArtifactsBucket
     Export:
-      Name: !Sub '${CapitalizedProjectName}PipelineArtifactsBucket'
-
-  RepositoryURL:
-    Description: SSH URL of the repository
-    Value: !GetAtt CodeCommitRepository.CloneUrlSsh
+      Name: !Sub '${ProjectName}PipelineArtifactsBucket'
